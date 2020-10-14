@@ -9,7 +9,7 @@
 import UIKit
 import Foundation
 
-public class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDataSource, UITableViewDelegate {
+open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDataSource, UITableViewDelegate {
 
     public enum Choice {
         case normal
