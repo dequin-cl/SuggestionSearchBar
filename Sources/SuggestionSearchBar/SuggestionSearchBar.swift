@@ -119,13 +119,13 @@ open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDat
     // MARK: - SET DATAS
     // --------------------------------
 
-    public func setDatas(datas: [String]) {
+    open func setDatas(datas: [String]) {
         if !suggestionListWithUrl.isEmpty { fatalError("You have already filled 'suggestionListWithUrl' ! You can fill only one list. ") }
         suggestionList = datas
         choice = .normal
     }
 
-    public func setDatasWithUrl(datas: [SuggestionSearchBarModel]) {
+    open func setDatasWithUrl(datas: [SuggestionSearchBarModel]) {
         if !suggestionList.isEmpty { fatalError("You have already filled 'suggestionList' ! You can fill only one list. ") }
         suggestionListWithUrl = datas
         choice = .withUrl
@@ -135,34 +135,34 @@ open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDat
     // MARK: - DELEGATE METHODS SEARCH BAR
     // --------------------------------
 
-    public func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+    open func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         searchWhenUserTyping(caracters: searchText)
         delegateSuggestionSearchBar?.searchBar?(searchBar, textDidChange: searchText)
     }
 
-    public func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+    open func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
         delegateSuggestionSearchBar?.searchBarTextDidBeginEditing?(searchBar)
         if suggestionsView == nil { configureViews() }
     }
 
-    public func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+    open func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
         closeSuggestionsView()
         delegateSuggestionSearchBar?.searchBarTextDidEndEditing?(searchBar)
     }
 
-    public func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+    open func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         closeSuggestionsView()
         delegateSuggestionSearchBar?.searchBarSearchButtonClicked?(searchBar)
         endEditing(true)
     }
 
-    public func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+    open func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
         closeSuggestionsView()
         delegateSuggestionSearchBar?.searchBarCancelButtonClicked?(searchBar)
         endEditing(true)
     }
 
-    public func searchBarShouldEndEditing(_ searchBar: UISearchBar) -> Bool {
+    open func searchBarShouldEndEditing(_ searchBar: UISearchBar) -> Bool {
         if let shouldEndEditing = delegateSuggestionSearchBar?.searchBarShouldEndEditing?(searchBar) {
             return shouldEndEditing
         } else {
@@ -170,7 +170,7 @@ open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDat
         }
     }
 
-    public func searchBarShouldBeginEditing(_ searchBar: UISearchBar) -> Bool {
+    open func searchBarShouldBeginEditing(_ searchBar: UISearchBar) -> Bool {
         if let shouldBeginEditing = delegateSuggestionSearchBar?.searchBarShouldBeginEditing?(searchBar) {
             return shouldBeginEditing
         } else {
