@@ -37,6 +37,7 @@ public class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewD
     public var delegateSuggestionSearchBar: SuggestionSearchBarDelegate?
 
     //PUBLICS OPTIONS
+    public var rootViewController: UIViewController!
     public var useShadow: Bool = true
     public var shadowView_alpha: CGFloat = 0.3
 
@@ -465,7 +466,7 @@ public class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewD
 
     private func getTopViewController() -> UIViewController? {
 
-        var topController: UIViewController? = delegateSuggestionSearchBar?.rootViewController
+        var topController = self.rootViewController
         while topController?.presentedViewController != nil {
             topController = topController?.presentedViewController
         }
@@ -514,7 +515,7 @@ public class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewD
     @objc
     private func textFieldDidChange(textField: UITextField) {
         guard let text = textField.text else { return }
-        delegateSuggestionSearchBar?.onTextChangedOnSearchBar(suggestionSearchBar: self, text: text)
+        delegateSuggestionSearchBar?.onTextChangedOnSearchBar?(suggestionSearchBar: self, text: text)
     }
 
     // ---------------

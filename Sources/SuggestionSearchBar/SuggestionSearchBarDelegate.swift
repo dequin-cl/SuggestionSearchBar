@@ -12,5 +12,4 @@ import UIKit
     @objc optional func onTextChangedOnSearchBar(suggestionSearchBar: SuggestionSearchBar, text: String)
     
     func getKeyboardHeight() -> CGFloat
-    var rootViewController: UIViewController { get set }
 }
