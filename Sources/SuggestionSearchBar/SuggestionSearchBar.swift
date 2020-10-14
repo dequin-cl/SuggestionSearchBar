@@ -426,7 +426,7 @@ public class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewD
     }
 
     private func getEstimateHeightSuggestionsView() -> CGFloat {
-        if let delegateKeyboardHeight = delegateSuggestionSearchBar?.getKeyboardHeight?(), delegateKeyboardHeight > 0 {
+        if let delegateKeyboardHeight = delegateSuggestionSearchBar?.getKeyboardHeight(), delegateKeyboardHeight > 0 {
             keyboardHeight = delegateKeyboardHeight
         }
 
@@ -514,7 +514,7 @@ public class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewD
     @objc
     private func textFieldDidChange(textField: UITextField) {
         guard let text = textField.text else { return }
-        delegateSuggestionSearchBar?.onTextChangedOnSearchBar?(suggestionSearchBar: self, text: text)
+        delegateSuggestionSearchBar?.onTextChangedOnSearchBar(suggestionSearchBar: self, text: text)
     }
 
     // ---------------
