@@ -71,7 +71,7 @@ open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDat
         setup()
     }
 
-    init () {
+    public init () {
         super.init(frame: CGRect.zero)
         setup()
     }
