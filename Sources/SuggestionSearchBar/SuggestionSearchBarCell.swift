@@ -10,10 +10,11 @@ import UIKit
 
 public class SuggestionSearchBarCell: UITableViewCell {
 
-    public static let defaultMargin: CGFloat = 10
-
-    let imgSuggestionSearchBar = UIImageView()
-    var labelModelSearchBar = UILabel()
+    private var imageSize: CGSize = .zero
+    private var stackView: UIStackView!
+    private(set) var label: UILabel!
+    private var imageContainerView: UIImageView!
+    private var modelImage: UIImage?
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -25,84 +26,136 @@ public class SuggestionSearchBarCell: UITableViewCell {
     }
 
     private func setup() {
-        ///Setup image
-        imgSuggestionSearchBar.translatesAutoresizingMaskIntoConstraints = false
-        imgSuggestionSearchBar.contentMode = .scaleAspectFill
 
-        ///Setup label
-        labelModelSearchBar.translatesAutoresizingMaskIntoConstraints = false
-        labelModelSearchBar.numberOfLines = 0
-        labelModelSearchBar.lineBreakMode = NSLineBreakMode.byWordWrapping
+        imageContainerView = UIImageView(image: UIImage())
+        let aContainerView = UIView()
 
-        contentView.addSubview(imgSuggestionSearchBar)
-        contentView.addSubview(labelModelSearchBar)
-    }
+        imageContainerView.translatesAutoresizingMaskIntoConstraints = false
+        aContainerView.addSubview(imageContainerView)
+        aContainerView.translatesAutoresizingMaskIntoConstraints = false
 
-    ///Configure constraint for each row of suggestionsView
-    public func configureConstraints(heightImage: CGFloat, widthImage: CGFloat) {
+        label = UILabel()
+        label.numberOfLines = 0
+        label.lineBreakMode = NSLineBreakMode.byWordWrapping
+        label.translatesAutoresizingMaskIntoConstraints = false
 
-        ///Image constraints
-        NSLayoutConstraint.deactivate(contentView.constraints)
+        let labelContainer = UIView()
+        labelContainer.addSubview(label)
 
-        imgSuggestionSearchBar.leftAnchor.constraint(equalTo: contentView.leftAnchor, constant: SuggestionSearchBarCell.defaultMargin).isActive = true
-        imgSuggestionSearchBar.centerYAnchor.constraint(equalTo: contentView.centerYAnchor, constant: 0).isActive = true
+        label.topAnchor.constraint(equalTo: labelContainer.topAnchor).isActive = true
+        label.trailingAnchor.constraint(equalTo: labelContainer.trailingAnchor).isActive = true
+        label.bottomAnchor.constraint(equalTo: labelContainer.bottomAnchor).isActive = true
+        label.leadingAnchor.constraint(equalTo: labelContainer.leadingAnchor).isActive = true
 
-        imgSuggestionSearchBar.heightAnchor.constraint(equalToConstant: heightImage).isActive = true
-        imgSuggestionSearchBar.widthAnchor.constraint(equalToConstant: widthImage).isActive = true
+        stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.alignment = .fill
+        stackView.distribution = .fill
+        stackView.spacing = imageSize == .zero ? 0: 16
+        stackView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 20, leading: 20, bottom: 20, trailing: 20)
 
-        ///Label constraints
-        if imgSuggestionSearchBar.image != nil {
-            labelModelSearchBar.leftAnchor.constraint(equalTo: imgSuggestionSearchBar.rightAnchor, constant: SuggestionSearchBarCell.defaultMargin).isActive = true
-        } else {
-            labelModelSearchBar.leftAnchor.constraint(equalTo: contentView.leftAnchor, constant: SuggestionSearchBarCell.defaultMargin).isActive = true
-        }
-        labelModelSearchBar.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor, constant: SuggestionSearchBarCell.defaultMargin).isActive = true
-        labelModelSearchBar.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: SuggestionSearchBarCell.defaultMargin).isActive = true
-        labelModelSearchBar.centerYAnchor.constraint(equalTo: contentView.centerYAnchor, constant: 0).isActive = true
-        labelModelSearchBar.rightAnchor.constraint(equalTo: contentView.rightAnchor, constant: SuggestionSearchBarCell.defaultMargin).isActive = true
+        stackView.addArrangedSubview(aContainerView)
+        stackView.addArrangedSubview(labelContainer)
 
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(stackView)
+
+        stackView.topAnchor.constraint(equalTo: contentView.layoutMarginsGuide.topAnchor, constant: 0).isActive = true
+        stackView.bottomAnchor.constraint(equalTo: contentView.layoutMarginsGuide.bottomAnchor, constant: 0).isActive = true
+        stackView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor, constant: 8).isActive = true
+        stackView.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor, constant: -8).isActive = true
     }
 
     ///Configure image of suggestionsView
-    public func configureImage(choice: SuggestionSearchBar.Choice, searchImage: UIImage?, suggestionsListWithUrl: [SuggestionSearchBarModel], position: Int, isImageRound: Bool, heightImage: CGFloat) {
+    public func configureImage(choice: SuggestionSearchBar.Choice,
+                               suggestionsListWithUrl: [SuggestionSearchBarModel],
+                               position: Int,
+                               isImageRound: Bool,
+                               imageSize: CGSize) {
+
+        self.imageSize = imageSize
+
         switch choice {
             ///Show image from asset
             case .normal:
-                imgSuggestionSearchBar.image = searchImage
                 break
             ///Show image from URL
             case .withUrl:
-                let model = suggestionsListWithUrl[position]
+                var model = suggestionsListWithUrl[position]
                 if model.imgCache != nil {
-                    imgSuggestionSearchBar.image = model.imgCache
+                    processImage(image: model.imgCache)
+
                 } else {
-                    downloadImage(model: model)
+                    if model.url.absoluteString != "#" {
+                        downloadImage(imageURL: model.url) { (image) in
+                            model.addImage(image)
+                            self.processImage(image: image)
+                        }
+                    }
                 }
                 break
         }
 
         if isImageRound {
-            imgSuggestionSearchBar.layer.cornerRadius = heightImage / 2
-            imgSuggestionSearchBar.clipsToBounds = true
+            imageContainerView?.layer.cornerRadius = imageSize.height / 2
+            imageContainerView?.clipsToBounds = true
+        }
+    }
+
+    private func processImage(image: UIImage?) {
+        modelImage = image
+        imageContainerView?.image = modelImage
+    }
+
+    fileprivate func adjustImageContainerConstraints() {
+        NSLayoutConstraint.deactivate(imageContainerView.constraints)
+
+        let aContainerView = imageContainerView.superview!
+        var constraints: [NSLayoutConstraint]!
+
+        if imageSize == .zero {
+            constraints = [
+                imageContainerView.leadingAnchor.constraint(equalTo: aContainerView.leadingAnchor, constant: 0),
+                imageContainerView.trailingAnchor.constraint(equalTo: aContainerView.trailingAnchor, constant: 0),
+                imageContainerView.centerYAnchor.constraint(equalTo: stackView.centerYAnchor),
+                imageContainerView.heightAnchor.constraint(equalToConstant: imageSize.height),
+                imageContainerView.widthAnchor.constraint(equalToConstant: imageSize.width),
+                aContainerView.widthAnchor.constraint(equalToConstant: 0)
+            ]
+        } else {
+            constraints = [
+                imageContainerView.leadingAnchor.constraint(greaterThanOrEqualTo: aContainerView.leadingAnchor, constant: 5),
+                imageContainerView.trailingAnchor.constraint(greaterThanOrEqualTo: aContainerView.trailingAnchor, constant: -5),
+                imageContainerView.centerYAnchor.constraint(equalTo: stackView.centerYAnchor),
+                imageContainerView.heightAnchor.constraint(equalToConstant: imageSize.height),
+                imageContainerView.widthAnchor.constraint(equalToConstant: imageSize.width),
+                aContainerView.widthAnchor.constraint(equalToConstant: (imageSize.width + 10))
+            ]
+        }
+
+        constraints.forEach {
+            $0.priority = .required
+            $0.isActive = true
         }
     }
 
     override public func layoutSubviews() {
         super.layoutSubviews()
-        contentView.layoutIfNeeded()
-        labelModelSearchBar.preferredMaxLayoutWidth = labelModelSearchBar.frame.size.width
+
+        adjustImageContainerConstraints()
     }
 
     //----------------------------
 
-    func downloadImage(model: SuggestionSearchBarModel) {
+    func downloadImage(imageURL: URL,  success: @escaping (UIImage?) -> ()) {
+
         DispatchQueue.global(qos: .background).async {
-            self.getDataFromUrl(url: model.url) { (data, _, error)  in
+            self.getDataFromUrl(url: imageURL) { (data, _, error)  in
                 guard let data = data, error == nil else { return }
                 let image = UIImage(data: data)
                 DispatchQueue.main.async { () -> Void in
-                    model.imgCache = image
-                    self.imgSuggestionSearchBar.image = image
+                    success(image)
+                    self.imageContainerView?.image = image
                 }
             }
         }

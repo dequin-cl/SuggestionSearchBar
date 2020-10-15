@@ -30,7 +30,39 @@ open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDat
     private var keyboardHeight: CGFloat = 0
 
     // MARK: VIEWS
-    private var suggestionsView: UITableView?
+    private lazy var suggestionsView: UITableView = {
+
+        ///Configure suggestionsView (TableView)
+        var tableView = UITableView(frame: CGRect(x: getSuggestionsViewX(), y: getSuggestionsViewY(), width: getSuggestionsViewWidth(), height: 0))
+        tableView.delegate = self
+        tableView.dataSource = self
+
+        tableView.register(SuggestionSearchBarCell.self, forCellReuseIdentifier: "cell")
+
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 300
+
+        tableView.separatorStyle = suggestionsView_separatorStyle
+
+        if let backgroundColor = suggestionsView_backgroundColor { tableView.backgroundColor = backgroundColor }
+
+        if useShadow {
+            ///Configure the suggestions shadow (Behing the TableView)
+            suggestionsShadow = UIView(frame: CGRect(x: getShadowX(), y: getShadowY(), width: getShadowWidth(), height: getShadowHeight()))
+            suggestionsShadow?.backgroundColor = UIColor.black.withAlphaComponent(shadowView_alpha)
+
+            ///Configure the gesture to handle click on shadow and improve focus on searchbar
+            let gestureShadow = UITapGestureRecognizer(target: self, action: #selector (onClickShadowView (_:)))
+            suggestionsShadow?.addGestureRecognizer(gestureShadow)
+        }
+
+        let gestureRemoveFocus = UITapGestureRecognizer(target: self, action: #selector (removeFocus (_:)))
+        gestureRemoveFocus.cancelsTouchesInView = false
+        getViewTopController().addGestureRecognizer(gestureRemoveFocus)
+
+        return tableView
+    }()
+
     private var suggestionsShadow: UIView?
 
     // MARK: DELEGATE
@@ -40,8 +72,6 @@ open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDat
     public var rootViewController: UIViewController!
     public var useShadow: Bool = true
     public var shadowView_alpha: CGFloat = 0.3
-
-    public var searchImage: UIImage?
 
     public var searchLabel_font: UIFont?
     public var searchLabel_textColor: UIColor?
@@ -85,36 +115,6 @@ open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDat
         interceptMemoryWarning()
     }
 
-    private func configureViews() {
-
-        ///Configure suggestionsView (TableView)
-        suggestionsView = UITableView(frame: CGRect(x: getSuggestionsViewX(), y: getSuggestionsViewY(), width: getSuggestionsViewWidth(), height: 0))
-        suggestionsView!.delegate = self
-        suggestionsView!.dataSource = self
-        suggestionsView!.register(SuggestionSearchBarCell.self, forCellReuseIdentifier: "cell")
-        suggestionsView!.rowHeight = UITableView.automaticDimension
-        suggestionsView!.estimatedRowHeight = 100
-        suggestionsView!.separatorStyle = suggestionsView_separatorStyle
-        if let backgroundColor = suggestionsView_backgroundColor { suggestionsView!.backgroundColor = backgroundColor }
-
-        if useShadow {
-            ///Configure the suggestions shadow (Behing the TableView)
-            suggestionsShadow = UIView(frame: CGRect(x: getShadowX(), y: getShadowY(), width: getShadowWidth(), height: getShadowHeight()))
-            suggestionsShadow?.backgroundColor = UIColor.black.withAlphaComponent(shadowView_alpha)
-
-            ///Configure the gesture to handle click on shadow and improve focus on searchbar
-            let gestureShadow = UITapGestureRecognizer(target: self, action: #selector (onClickShadowView (_:)))
-            suggestionsShadow?.addGestureRecognizer(gestureShadow)
-        }
-
-        let gestureRemoveFocus = UITapGestureRecognizer(target: self, action: #selector (removeFocus (_:)))
-        gestureRemoveFocus.cancelsTouchesInView = false
-        getViewTopController().addGestureRecognizer(gestureRemoveFocus)
-
-        ///Reload datas of suggestionsView
-        suggestionsView!.reloadData()
-    }
-
     // --------------------------------
     // MARK: - SET DATAS
     // --------------------------------
@@ -142,7 +142,6 @@ open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDat
 
     open func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
         delegateSuggestionSearchBar?.searchBarTextDidBeginEditing?(searchBar)
-        if suggestionsView == nil { configureViews() }
     }
 
     open func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
@@ -184,7 +183,7 @@ open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDat
 
     ///Handle click on shadow view
     @objc func onClickShadowView(_ sender: UITapGestureRecognizer) {
-        delegateSuggestionSearchBar?.onClickShadowView?(suggestionSearchBar: self, shadowView: suggestionsShadow!)
+        delegateSuggestionSearchBar?.onClickShadowView(suggestionSearchBar: self, shadowView: suggestionsShadow!)
         closeSuggestionsView()
     }
 
@@ -199,54 +198,55 @@ open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDat
 
     public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch choice {
-        case .normal:
-            return suggestionListFiltred.count
-        case .withUrl:
-            return suggestionListWithUrlFiltred.count
+            case .normal:
+                return suggestionListFiltred.count
+            case .withUrl:
+                return suggestionListWithUrlFiltred.count
         }
     }
 
     public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-
+        debugPrint("CellForRow")
         let cell: SuggestionSearchBarCell = tableView.dequeueReusableCell(withIdentifier: "cell") as! SuggestionSearchBarCell
 
         var title = ""
-
+        var imageSize: CGSize = .zero
         switch choice {
-        case .normal:
-            title = suggestionListFiltred[indexPath.row]
-            break
-        case .withUrl:
-            title = suggestionListWithUrlFiltred[indexPath.row].title
-            break
+            case .normal:
+                title = suggestionListFiltred[indexPath.row]
+                imageSize = .zero
+                break
+            case .withUrl:
+                title = suggestionListWithUrlFiltred[indexPath.row].title
+                imageSize = CGSize(width: suggestionsView_searchIcon_width, height: suggestionsView_searchIcon_height)
+                break
         }
 
         ///Configure label
-        cell.labelModelSearchBar.text = title
-        if let font = searchLabel_font { cell.labelModelSearchBar.font = font }
-        if let textColor = searchLabel_textColor { cell.labelModelSearchBar.textColor = textColor }
-        if let backgroundColor = searchLabel_backgroundColor { cell.labelModelSearchBar.backgroundColor = backgroundColor }
+        cell.label.text = title
+        if let font = searchLabel_font { cell.label.font = font }
+        if let textColor = searchLabel_textColor { cell.label.textColor = textColor }
+        if let backgroundColor = searchLabel_backgroundColor { cell.label.backgroundColor = backgroundColor }
 
         ///Configure content
         if let contentColor = suggestionsView_contentViewColor { cell.contentView.backgroundColor = contentColor }
         cell.selectionStyle = suggestionsView_selectionStyle
 
         ///Configure Image
-        cell.configureImage(choice: choice, searchImage: searchImage, suggestionsListWithUrl: suggestionListWithUrlFiltred, position: indexPath.row, isImageRound: suggestionsView_searchIcon_isRound, heightImage: suggestionsView_searchIcon_height)
-        //fetchImageFromUrl(model: suggestionListWithUrlFiltred[indexPath.row], cell: cell, indexPath: indexPath)
-
-        ///Configure Constraints
-        cell.configureConstraints(heightImage: suggestionsView_searchIcon_height, widthImage: suggestionsView_searchIcon_width)
-
+        cell.configureImage(choice: choice,
+                            suggestionsListWithUrl: suggestionListWithUrlFiltred,
+                            position: indexPath.row,
+                            isImageRound: suggestionsView_searchIcon_isRound,
+                            imageSize: imageSize)
         return cell
     }
 
     public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         switch choice {
-        case .normal:
-            delegateSuggestionSearchBar?.onClickItemSuggestionsView?(suggestionSearchBar: self, item: suggestionListFiltred[indexPath.row])
-        case .withUrl:
-            delegateSuggestionSearchBar?.onClickItemWithUrlSuggestionsView?(suggestionSearchBar: self, item: suggestionListWithUrlFiltred[indexPath.row])
+            case .normal:
+                delegateSuggestionSearchBar?.onClickItemSuggestionsView(suggestionSearchBar: self, item: suggestionListFiltred[indexPath.row])
+            case .withUrl:
+                delegateSuggestionSearchBar?.onClickItemWithUrlSuggestionsView(suggestionSearchBar: self, item: suggestionListWithUrlFiltred[indexPath.row])
         }
     }
 
@@ -259,43 +259,43 @@ open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDat
 
         switch choice {
 
-        ///Case normal (List of string)
-        case .normal:
+            ///Case normal (List of string)
+            case .normal:
 
-            var suggestionListFiltredTmp = [String]()
-            DispatchQueue.global(qos: .background).async {
-                for item in self.suggestionList {
-                    if self.researchCaracters(stringSearched: caracters, stringQueried: item) {
-                        suggestionListFiltredTmp.append(item)
+                var suggestionListFiltredTmp = [String]()
+                DispatchQueue.global(qos: .background).async {
+                    for item in self.suggestionList {
+                        if self.researchCaracters(stringSearched: caracters, stringQueried: item) {
+                            suggestionListFiltredTmp.append(item)
+                        }
+                    }
+                    DispatchQueue.main.async {
+                        self.suggestionListFiltred.removeAll()
+                        self.suggestionListFiltred.append(contentsOf: suggestionListFiltredTmp)
+                        self.updateAfterSearch(caracters: caracters)
                     }
                 }
-                DispatchQueue.main.async {
-                    self.suggestionListFiltred.removeAll()
-                    self.suggestionListFiltred.append(contentsOf: suggestionListFiltredTmp)
-                    self.updateAfterSearch(caracters: caracters)
-                }
-            }
 
-            break
+                break
 
-        ///Case with URL (List of SuggestionSearchBarModel)
-        case .withUrl:
+            ///Case with URL (List of SuggestionSearchBarModel)
+            case .withUrl:
 
-            var suggestionListFiltredWithUrlTmp = [SuggestionSearchBarModel]()
-            DispatchQueue.global(qos: .background).async {
-                for item in self.suggestionListWithUrl {
-                    if self.researchCaracters(stringSearched: caracters, stringQueried: item.title) {
-                        suggestionListFiltredWithUrlTmp.append(item)
+                var suggestionListFiltredWithUrlTmp = [SuggestionSearchBarModel]()
+                DispatchQueue.global(qos: .background).async {
+                    for item in self.suggestionListWithUrl {
+                        if self.researchCaracters(stringSearched: caracters, stringQueried: item.title) {
+                            suggestionListFiltredWithUrlTmp.append(item)
+                        }
+                    }
+                    DispatchQueue.main.async {
+                        self.suggestionListWithUrlFiltred.removeAll()
+                        self.suggestionListWithUrlFiltred.append(contentsOf: suggestionListFiltredWithUrlTmp)
+                        self.updateAfterSearch(caracters: caracters)
                     }
                 }
-                DispatchQueue.main.async {
-                    self.suggestionListWithUrlFiltred.removeAll()
-                    self.suggestionListWithUrlFiltred.append(contentsOf: suggestionListFiltredWithUrlTmp)
-                    self.updateAfterSearch(caracters: caracters)
-                }
-            }
 
-            break
+                break
         }
     }
 
@@ -304,12 +304,8 @@ open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDat
     }
 
     private func updateAfterSearch(caracters: String) {
-        if suggestionsView == nil {
-            configureViews()
-        } else {
-            suggestionsView!.frame = CGRect(x: getSuggestionsViewX(), y: getSuggestionsViewY(), width: getSuggestionsViewWidth(), height: 0)
-        }
-        suggestionsView!.reloadData()
+        suggestionsView.frame = CGRect(x: getSuggestionsViewX(), y: getSuggestionsViewY(), width: getSuggestionsViewWidth(), height: 0)
+        suggestionsView.reloadData()
         caracters.isEmpty ? closeSuggestionsView() : openSuggestionsView()
         updateSizeSuggestionsView()
     }
@@ -320,10 +316,10 @@ open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDat
 
     private func haveToOpenSuggestionView() -> Bool {
         switch choice {
-        case .normal:
-            return !suggestionListFiltred.isEmpty
-        case .withUrl:
-            return !suggestionListWithUrlFiltred.isEmpty
+            case .normal:
+                return !suggestionListFiltred.isEmpty
+            case .withUrl:
+                return !suggestionListWithUrlFiltred.isEmpty
         }
     }
 
@@ -336,9 +332,11 @@ open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDat
                     addViewToParent(view: suggestionsShadow!)
                 }
 
-                addViewToParent(view: suggestionsView!)
+                addViewToParent(view: suggestionsView)
                 isSuggestionsViewOpened = true
-                suggestionsView!.reloadData()
+                suggestionsView.reloadData()
+                suggestionsView.setNeedsLayout()
+                suggestionsView.layoutIfNeeded()
             }
         }
     }
@@ -352,14 +350,14 @@ open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDat
 
     private func animationOpening() {
         UIView.animate(withDuration: 0.3, delay: 0.0, options: [], animations: {
-            self.suggestionsView?.alpha = 1.0
+            self.suggestionsView.alpha = 1.0
             self.suggestionsShadow?.alpha = 1.0
         }, completion: nil)
     }
 
     private func animationClosing() {
         UIView.animate(withDuration: 0.3, delay: 0.0, options: [], animations: {
-            self.suggestionsView?.alpha = 0.0
+            self.suggestionsView.alpha = 0.0
             self.suggestionsShadow?.alpha = 0.0
         }, completion: nil)
     }
@@ -401,13 +399,14 @@ open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDat
     }
 
     private func updateSizeSuggestionsView() {
-        var frame: CGRect = suggestionsView!.frame
-        frame.size.height = getExactMaxHeightSuggestionsView(newHeight: suggestionsView!.contentSize.height)
+        debugPrint("updateSizeSuggestionsView")
+        var frame: CGRect = suggestionsView.frame
+        frame.size.height = getExactMaxHeightSuggestionsView(newHeight: suggestionsView.contentSize.height)
 
         UIView.animate(withDuration: 0.3) {
-            self.suggestionsView!.frame = frame
-            self.suggestionsView!.layoutIfNeeded()
-            self.suggestionsView!.sizeToFit()
+            self.suggestionsView.frame = frame
+            self.suggestionsView.layoutIfNeeded()
+            self.suggestionsView.sizeToFit()
         }
     }
 
@@ -443,14 +442,17 @@ open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDat
 
     private func clearCacheOfList() {
         ///Clearing cache
-        for suggestionItem in suggestionListWithUrl {
-            suggestionItem.imgCache = nil
+        for index in 0..<suggestionListWithUrl.count {
+            suggestionListWithUrl[index].clearCache()
         }
         ///Clearing cache
-        for suggestionItem in suggestionListWithUrlFiltred {
-            suggestionItem.imgCache = nil
+        for index in 0..<suggestionListWithUrlFiltred.count {
+            suggestionListWithUrlFiltred[index].clearCache()
         }
-        suggestionsView?.reloadData()
+
+        suggestionsView.reloadData()
+        suggestionsView.setNeedsLayout()
+        suggestionsView.layoutIfNeeded()
     }
 
     private func addViewToParent(view: UIView) {
@@ -515,20 +517,20 @@ open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDat
     @objc
     private func textFieldDidChange(textField: UITextField) {
         guard let text = textField.text else { return }
-        delegateSuggestionSearchBar?.onTextChangedOnSearchBar?(suggestionSearchBar: self, text: text)
+        delegateSuggestionSearchBar?.onTextChangedOnSearchBar(suggestionSearchBar: self, text: text)
     }
 
     // ---------------
 
     private func interceptKeyboardChange() {
         NotificationCenter.default.addObserver( self,
-            selector: #selector(keyboardWillShow(notification:)),
-            name: UIResponder.keyboardWillShowNotification,
-            object: self.getEditText())
+                                                selector: #selector(keyboardWillShow(notification:)),
+                                                name: UIResponder.keyboardWillShowNotification,
+                                                object: self.getEditText())
         NotificationCenter.default.addObserver( self,
-            selector: #selector(keyboardWillHide(notification:)),
-            name: UIResponder.keyboardWillHideNotification,
-            object: self.getEditText()
+                                                selector: #selector(keyboardWillHide(notification:)),
+                                                name: UIResponder.keyboardWillHideNotification,
+                                                object: self.getEditText()
         )
     }
 

@@ -5,20 +5,27 @@
 
 import UIKit
 
-public class SuggestionSearchBarModel: NSObject {
+public struct SuggestionSearchBarModel {
 
-    public var title: String!
-    public var url: URL!
-    public var imgCache: UIImage!
+    public private(set) var title: String
+    public private(set) var url: URL
+    private(set) var imgCache: UIImage?
 
     public init(title: String, url: String) {
-        super.init()
         self.title = title
         if let newUrl = URL(string: url) {
             self.url = newUrl
         } else {
-            print("SuggestionSearchBarModel: Seems url is not valid...")
-            self.url = URL(string: "#")
+            debugPrint("SuggestionSearchBarModel: Seems url is not valid...")
+            self.url = URL(string: "#")!
         }
+    }
+
+    mutating func addImage(_ image: UIImage?) {
+        imgCache = image
+    }
+
+    mutating func clearCache() {
+        imgCache = nil
     }
 }
