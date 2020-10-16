@@ -5,6 +5,7 @@ A library to add a suggestion list to your iOS Search Bar
 Its based on [ModernSearchBar](https://github.com/PhilippeBoisney/ModernSearchBar), work by [Philippe Boisney](https://github.com/PhilippeBoisney).
 
 ![Suggestion Search Bar with Strings](Screenshots/SuggestionStringsDemo.gif)
+![Suggestion Search Bar with Images](Screenshots/SuggestionStringsWithImagesDemo.gif)
 
 ## Install
 ### Swift Package Manager
