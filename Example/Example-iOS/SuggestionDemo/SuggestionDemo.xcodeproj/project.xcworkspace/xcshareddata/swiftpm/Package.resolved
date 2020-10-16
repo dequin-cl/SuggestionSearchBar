@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "SuggestionSearchBar",
+        "repositoryURL": "https://github.com/dequin-cl/SuggestionSearchBar",
+        "state": {
+          "branch": null,
+          "revision": "ecd09159b82802b534f70e7bba31592adf326851",
+          "version": "1.0.0"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
