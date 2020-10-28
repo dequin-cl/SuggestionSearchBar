@@ -134,6 +134,7 @@ open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDat
 
     open func setDatasWithUrl(datas: [SuggestionSearchBarModel]) {
         if !suggestionList.isEmpty { fatalError("You have already filled 'suggestionList' ! You can fill only one list. ") }
+        if useSearchParameterAsDefaultResult { fatalError("useSearchParameterAsDefaultResult can only be used with String type data") }
         suggestionListWithUrl = datas
         choice = .withUrl
     }
