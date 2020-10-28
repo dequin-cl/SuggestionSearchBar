@@ -89,6 +89,13 @@ open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDat
     public var suggestionsView_searchIcon_isRound = true
 
     public var suggestionsView_spaceWithKeyboard: CGFloat = 3
+    
+    
+    /// This parameter allows you to show the search input value as a result when there's
+    /// no match with the provided String data.
+    /// - Important
+    /// Only works for String typed data
+    public var useSearchParameterAsDefaultResult: Bool = false
 
     // MARK: INITIALISERS
     required public init(coder aDecoder: NSCoder) {
@@ -268,6 +275,9 @@ open class SuggestionSearchBar: UISearchBar, UISearchBarDelegate, UITableViewDat
                         if self.researchCaracters(stringSearched: caracters, stringQueried: item) {
                             suggestionListFiltredTmp.append(item)
                         }
+                    }
+                    if suggestionListFiltredTmp.isEmpty, self.useSearchParameterAsDefaultResult {
+                        suggestionListFiltredTmp.append(caracters)
                     }
                     DispatchQueue.main.async {
                         self.suggestionListFiltred.removeAll()
